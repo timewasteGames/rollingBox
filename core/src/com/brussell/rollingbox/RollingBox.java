@@ -14,7 +14,6 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
@@ -25,8 +24,6 @@ public class RollingBox extends Game {
   private static final float BOX_ROTATE_SPEED = 1f;
   private static final float BOX_SIZE = 10f;
   private static final float BOX_DIAGONAL = (float) Math.sqrt(BOX_SIZE * BOX_SIZE + BOX_SIZE * BOX_SIZE) / 2f;
-  private static final float Y_OFFSET = -20f;
-  private static final float Z_OFFSET = -40f;
 
   private ModelBatch _modelBatch;
   private Viewport _viewport;
@@ -50,18 +47,25 @@ public class RollingBox extends Game {
   @Override
   public void create() {
     _modelBatch = new ModelBatch(new DefaultShaderProvider());
+
     _environment = new Environment();
     _environment.add(new DirectionalLight().set(new Color(Color.GOLD).mul(0.7f), new Vector3(1f, -1f, -1f).nor()));
     _environment.add(new DirectionalLight().set(new Color(Color.GOLD).mul(0.7f), new Vector3(-1f, -1f, -1f).nor()));
-    _viewport = new FitViewport(108f, 72f, new PerspectiveCamera());
-    _viewport.getCamera().direction.rotate(Vector3.X, -30f);
+
+    _viewport = new FitViewport(1080f, 720f, new PerspectiveCamera());
+    _viewport.getCamera().position.set(10f, 30f, 50f);
+    _viewport.getCamera().lookAt(0f, 0f, 0f);
+    _viewport.getCamera().near = 10f;
+    _viewport.getCamera().far = 500f;
+
 
     ModelBuilder modelBuilder = new ModelBuilder();
     _box = new ModelInstance(modelBuilder.createBox(BOX_SIZE, BOX_SIZE, BOX_SIZE, new Material(ColorAttribute.createDiffuse(Color.GOLD)), VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal));
-    _box.transform.setToTranslation(0f, Y_OFFSET + BOX_SIZE / 2, Z_OFFSET);
+    _box.transform.setToTranslation(0f, BOX_SIZE / 2, 0f);
 
-    _floor = new ModelInstance(modelBuilder.createLineGrid(10, 10, 10, 10, new Material(ColorAttribute.createDiffuse(Color.BLUE)), VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal));
-    _floor.transform.setToTranslation(0f, Y_OFFSET - 1f, Z_OFFSET);
+    _floor = new ModelInstance(modelBuilder.createLineGrid(10, 10, 10, 10, new Material(ColorAttribute.createDiffuse(Color.BLUE)), VertexAttributes.Usage.Position));
+    _floor.transform.setToTranslation(0f, -1f, 0f);
+//    _floor.transform.setToTranslation(-BOX_SIZE * 5, -1f, BOX_SIZE * 5);
 
     _boxInput = new BoxInput();
     Gdx.input.setInputProcessor(_boxInput);
@@ -134,7 +138,8 @@ public class RollingBox extends Game {
   // is quarter-circles around a pivoting corner.
   private void setTransform(final float rotation, final RotationDirection direction, final int gridPosX, final int gridPosZ) {
     // Makes the box look "heavy"
-    float smoothRotation = Interpolation.pow2In.apply(0f, 90f, rotation / 90f);
+//    float smoothRotation = Interpolation.pow2In.apply(0f, 90f, rotation / 90f);
+    float smoothRotation = rotation;
 
     // Position on the circle
     float verticalTranslation = BOX_DIAGONAL * MathUtils.sinDeg(smoothRotation + 45f);
@@ -142,8 +147,8 @@ public class RollingBox extends Game {
 
     // Base translation
     float x = gridPosX * BOX_SIZE;
-    float y = verticalTranslation + Y_OFFSET;
-    float z = gridPosZ * BOX_SIZE + Z_OFFSET;
+    float y = verticalTranslation;
+    float z = gridPosZ * BOX_SIZE;
 
     // Correction depending on which way we are rolling
     if (direction == RotationDirection.FORWARD) {
